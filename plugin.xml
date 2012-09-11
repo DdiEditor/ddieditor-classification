@@ -13,7 +13,7 @@
          point="org.eclipse.ui.menus">
       <menuContribution
             allPopups="false"
-            locationURI="menu:filemenu-importmenu?after=merge-ddi">
+            locationURI="menu:toolsmenu?after=ddieditor-ui.file.tools.separator1">
          <command
                commandId="dk.dda.ddieditor.classification.command.CreateClassification"
                label="Create Classification"

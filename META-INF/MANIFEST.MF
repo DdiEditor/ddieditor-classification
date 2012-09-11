@@ -12,4 +12,4 @@ Require-Bundle: org.eclipse.ui,
  lib-java;bundle-version="0.11.0",
  ddieditor-model;bundle-version="0.1.0"
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6

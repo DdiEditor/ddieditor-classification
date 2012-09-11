@@ -23,7 +23,6 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.events.TraverseEvent;
 import org.eclipse.swt.events.TraverseListener;
-import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
@@ -36,6 +35,30 @@ import org.eclipse.ui.PlatformUI;
 
 import au.com.bytecode.opencsv.CSVReader;
 
+/*
+ * Copyright 2012 Danish Data Archive (http://www.dda.dk) 
+ * 
+ * This program is free software; you can redistribute it and/or modify it 
+ * under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either Version 3 of the License, or 
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU Lesser General Public License for more details.
+ *  
+ * You should have received a copy of the GNU Lesser General Public 
+ * License along with this library; if not, write to the 
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
+ * Boston, MA  02110-1301  USA
+ * The full text of the license is also available on the Internet at 
+ * http://www.gnu.org/copyleft/lesser.html
+ */
+
+/**
+ * RCP wizard for classification creation
+ */
 public class CreateClassificationWizard extends Wizard {
 	private List<DDIResourceType> resources = null;
 
@@ -43,7 +66,7 @@ public class CreateClassificationWizard extends Wizard {
 	public String cvsFile = null;
 	public String labelTxt = "";
 	public String descriptionTxt = "";
-	public int codeImpl = 0;
+	public int codeImpl = 1; // use default nested
 	int levels = 0;
 
 	@Override
@@ -59,9 +82,9 @@ public class CreateClassificationWizard extends Wizard {
 
 	class SelectPage extends WizardPage {
 		public static final String PAGE_NAME = "select";
-		Spinner spinner= null;
+		Spinner spinner = null;
 		Label spinnerLabel = null;
-		
+
 		public SelectPage() {
 			super(PAGE_NAME, Translator.trans("classcification.wizard.title"),
 					null);
@@ -108,6 +131,7 @@ public class CreateClassificationWizard extends Wizard {
 					// on a CR - check if file exist and read it
 					if (e.keyCode == SWT.CR) {
 						cvsFile = readFile(pathText);
+						pageComplete();
 					}
 				}
 			});
@@ -149,12 +173,13 @@ public class CreateClassificationWizard extends Wizard {
 
 					pathText.setText(cvsFile);
 
-					try {
-						readLevels(new File(pathText.getText()));
-					} catch (Exception ex) {
-						levels = 1;
-						return;
-					}
+					// 20120903 levels comment out
+					// try {
+					// readLevels(new File(pathText.getText()));
+					// } catch (Exception ex) {
+					// levels = 1;
+					// return;
+					// }
 
 					pageComplete();
 				}
@@ -165,40 +190,43 @@ public class CreateClassificationWizard extends Wizard {
 				}
 			});
 
-			// create nested codes
-			editor.createLabel(group,
-					Translator.trans("classcification.codenested.label"));
-			Combo codcombo = editor.createCombo(group, new String[] {
-					Translator.trans("classcification.codenested.seperate"),
-					Translator.trans("classcification.codenested.levels"),
-					Translator.trans("classcification.codenested.nonest") });
-			codcombo.select(0);
+			// 20120903 comment out
+			// // create nested codes
+			// editor.createLabel(group,
+			// Translator.trans("classcification.codenested.label"));
+			// Combo codcombo = editor.createCombo(group, new String[] {
+			// Translator.trans("classcification.codenested.seperate"),
+			// Translator.trans("classcification.codenested.levels"),
+			// Translator.trans("classcification.codenested.nonest") });
+			// codcombo.select(1);
+			// codcombo.setVisible(false);
+			//
+			// // level spinner
+			// spinnerLabel = editor.createLabel(group, Translator
+			// .trans("classcification.codenested.subseperatefrom"));
+			// spinnerLabel.setVisible(false);
+			// spinner = new Spinner(group, SWT.BORDER);
+			// spinner.setMinimum(0);
+			// spinner.setSelection(0);
+			// spinner.setIncrement(1);
+			// spinner.setPageIncrement(1);
+			// spinner.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true,
+			// false, 1, 1));
+			// spinner.setVisible(false);
+			//
+			// codcombo.addSelectionListener(new SelectionListener() {
+			// @Override
+			// public void widgetSelected(SelectionEvent e) {
+			// codeImpl = ((Combo) e.getSource()).getSelectionIndex();
+			// setLevelInput();
+			// }
+			//
+			// @Override
+			// public void widgetDefaultSelected(SelectionEvent e) {
+			// // do nothing
+			// }
+			// });
 
-			// level spinner
-			spinnerLabel = editor.createLabel(group, Translator
-					.trans("classcification.codenested.subseperatefrom"));
-			spinnerLabel.setVisible(false);
-			spinner = new Spinner(group, SWT.BORDER);
-			spinner.setMinimum(0);
-			spinner.setSelection(0);
-			spinner.setIncrement(1);
-			spinner.setPageIncrement(1);
-			spinner.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true,
-					false, 1, 1));
-			spinner.setVisible(false);
-
-			codcombo.addSelectionListener(new SelectionListener() {
-				@Override
-				public void widgetSelected(SelectionEvent e) {
-					codeImpl = ((Combo) e.getSource()).getSelectionIndex();
-					setLevelInput();
-				}
-
-				@Override
-				public void widgetDefaultSelected(SelectionEvent e) {
-					// do nothing
-				}
-			});
 			// loaded resources
 			try {
 				resources = PersistenceManager.getInstance().getResources();
@@ -274,7 +302,7 @@ public class CreateClassificationWizard extends Wizard {
 			String[] cells;
 			String empty = "";
 			boolean emptyLine = true;
-		
+
 			levels = 0;
 			while ((cells = reader.readNext()) != null) {
 				// test for end of level definition

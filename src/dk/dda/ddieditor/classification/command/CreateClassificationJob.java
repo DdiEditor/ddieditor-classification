@@ -24,8 +24,10 @@ import org.ddialliance.ddieditor.model.DdiManager;
 import org.ddialliance.ddieditor.model.lightxmlobject.LightXmlObjectType;
 import org.ddialliance.ddieditor.model.resource.DDIResourceType;
 import org.ddialliance.ddieditor.persistenceaccess.PersistenceManager;
+import org.ddialliance.ddieditor.ui.dbxml.DaoHelper;
 import org.ddialliance.ddieditor.ui.dbxml.code.CodeSchemeDao;
 import org.ddialliance.ddieditor.ui.editor.Editor;
+import org.ddialliance.ddieditor.ui.model.AnyModel;
 import org.ddialliance.ddieditor.ui.model.ElementType;
 import org.ddialliance.ddieditor.ui.model.code.CodeScheme;
 import org.ddialliance.ddieditor.ui.preference.PreferenceUtil;
@@ -39,6 +41,34 @@ import org.ddialliance.ddiftp.util.xml.XmlBeansUtil;
 
 import au.com.bytecode.opencsv.CSVReader;
 
+/*
+ * Copyright 2012 Danish Data Archive (http://www.dda.dk) 
+ * 
+ * This program is free software; you can redistribute it and/or modify it 
+ * under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either Version 3 of the License, or 
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU Lesser General Public License for more details.
+ *  
+ * You should have received a copy of the GNU Lesser General Public 
+ * License along with this library; if not, write to the 
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
+ * Boston, MA  02110-1301  USA
+ * The full text of the license is also available on the Internet at 
+ * http://www.gnu.org/copyleft/lesser.html
+ */
+
+/*
+ * CreateClassificationJob is inspired by the project: Virgil UI by: Samuel Spencer, see: http://code.google.com/p/virgil-ui/
+ */
+
+/**
+ * Parse CSV and store DDI-L
+ */
 public class CreateClassificationJob implements Runnable {
 	private Log log = LogFactory.getLog(LogType.SYSTEM,
 			CreateClassificationJob.class);
@@ -80,7 +110,14 @@ public class CreateClassificationJob implements Runnable {
 			initCategoryScheme(cats.getCategoryScheme(), label, description);
 
 			// parse csv
-			parseCsv();
+			try {
+				parseCsv();
+			} catch (Exception e) {
+				DDIFtpException ex = new DDIFtpException(Translator.trans(
+						"classcification.error.cvsfileparseerror", csvFile));
+				ex.setRealThrowable(e);
+				throw ex;
+			}
 
 			// post process
 			postProcess();
@@ -140,23 +177,27 @@ public class CreateClassificationJob implements Runnable {
 				selectedResource.getOrgName());
 
 		// parent
-		String pId, pVer;
+		LightXmlObjectType parent = null;
+		String pId = null, pVer = null;
 		List<LightXmlObjectType> parents = DdiManager.getInstance()
 				.getLogicalProductsLight(null, null, null, null)
 				.getLightXmlObjectList().getLightXmlObjectList();
 		if (parents.isEmpty()) {
-			throw new DDIFtpException(Translator.trans(
-					"classcification.error.nologicalproduct",
-					selectedResource.getOrgName()), new Throwable());
+			parent = LightXmlObjectUtil.createLightXmlObject(null, null, null,
+					null, "logicalproduct__LogicalProduct");
 		} else {
+			parent = parents.get(0);
 			pId = parents.get(0).getId();
 			pVer = parents.get(0).getVersion();
 		}
 
 		// create cat scheme
 		if (!cats.getCategoryScheme().getCategoryList().isEmpty()) {
-			DdiManager.getInstance().createElement(cats, pId, pVer,
-					"logicalproduct__LogicalProduct");
+			AnyModel anyModelCats = new AnyModel(cats.getCategoryScheme()
+					.getId(), cats.getCategoryScheme().getVersion(), null,
+					null, null);
+			anyModelCats.setDocument(cats);
+			DaoHelper.createScheme(anyModelCats, parent);
 		}
 
 		// create level category schemes
